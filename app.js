@@ -19,7 +19,11 @@ let role = "student"; // по умолчанию ученик
 // ученик отправляет эмоцию
 panel.querySelectorAll(".emoji").forEach(btn=>{
   btn.addEventListener("click",()=>{
-    const entry = {emoji: btn.textContent, time: new Date().toISOString()};
+    const entry = {
+      emoji: btn.textContent.trim().split("\n")[0],
+      label: btn.dataset.label,
+      time: new Date().toISOString()
+    };
     emotions.push(entry);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(emotions));
     if(role==="teacher") renderFiltered();
@@ -60,56 +64,6 @@ function renderFiltered(){
 function renderStats(filtered){
   statsEl.innerHTML = "";
   const counts = {};
-  filtered.forEach(e=> counts[e.emoji] = (counts[e.emoji]||0)+1 );
-  statsEl.innerHTML = Object.entries(counts)
-    .map(([emo,c])=> `<span style="font-size:1.5rem">${emo}</span> — ${c}`)
-    .join("<br>");
-}
-
-function renderLog(filtered){
-  logEl.innerHTML = filtered.slice(-10).reverse()
-    .map(e=> `<li>${new Date(e.time).toLocaleString("ru-RU")} — ${e.emoji}</li>`)
-    .join("");
-}
-
-function renderChart(filtered){
-  const ctx = chartEl.getContext("2d");
-  ctx.clearRect(0,0,chartEl.width,chartEl.height);
-  const w = chartEl.width, h = chartEl.height;
-  if(filtered.length===0){
-    ctx.fillText("Нет данных",10,20);
-    return;
-  }
-  const counts = {};
-  filtered.forEach(e=> counts[e.emoji] = (counts[e.emoji]||0)+1 );
-  const unique = Object.keys(counts);
-  const colors = ["#4da3ff","#ff6b6b","#69d694","#ffb86b","#9b59b6","#f1c40f","#34495e"];
-  const max = Math.max(...Object.values(counts));
-  const barW = (w-40)/unique.length;
-  unique.forEach((emo,i)=>{
-    const barH = (counts[emo]/max)*(h-40);
-    ctx.fillStyle = colors[i%colors.length];
-    ctx.fillRect(20+i*barW, h-barH-20, barW-10, barH);
-    ctx.fillStyle = "#000";
-    ctx.fillText(emo, 20+i*barW, h-5);
-  });
-}
-panel.querySelectorAll(".emoji").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    const entry = {
-      emoji: btn.textContent.trim().split("\n")[0], // сам смайл
-      label: btn.dataset.label,                     // подпись
-      time: new Date().toISOString()
-    };
-    emotions.push(entry);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(emotions));
-    if(role==="teacher") renderFiltered();
-  });
-});
-
-function renderStats(filtered){
-  statsEl.innerHTML = "";
-  const counts = {};
   filtered.forEach(e=>{
     const key = e.label || e.emoji;
     counts[key] = (counts[key]||0)+1;
@@ -123,4 +77,30 @@ function renderLog(filtered){
   logEl.innerHTML = filtered.slice(-10).reverse()
     .map(e=> `<li>${new Date(e.time).toLocaleString("ru-RU")} — ${e.emoji} (${e.label})</li>`)
     .join("");
+}
+
+function renderChart(filtered){
+  const ctx = chartEl.getContext("2d");
+  ctx.clearRect(0,0,chartEl.width,chartEl.height);
+  const w = chartEl.width, h = chartEl.height;
+  if(filtered.length===0){
+    ctx.fillText("Нет данных",10,20);
+    return;
+  }
+  const counts = {};
+  filtered.forEach(e=>{
+    const key = e.label || e.emoji;
+    counts[key] = (counts[key]||0)+1;
+  });
+  const unique = Object.keys(counts);
+  const colors = ["#4da3ff","#ff6b6b","#69d694","#ffb86b","#9b59b6","#f1c40f","#34495e"];
+  const max = Math.max(...Object.values(counts));
+  const barW = (w-40)/unique.length;
+  unique.forEach((label,i)=>{
+    const barH = (counts[label]/max)*(h-40);
+    ctx.fillStyle = colors[i%colors.length];
+    ctx.fillRect(20+i*barW, h-barH-20, barW-10, barH);
+    ctx.fillStyle = "#000";
+    ctx.fillText(label, 20+i*barW, h-5);
+  });
 }
