@@ -94,3 +94,33 @@ function renderChart(filtered){
     ctx.fillText(emo, 20+i*barW, h-5);
   });
 }
+panel.querySelectorAll(".emoji").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const entry = {
+      emoji: btn.textContent.trim().split("\n")[0], // сам смайл
+      label: btn.dataset.label,                     // подпись
+      time: new Date().toISOString()
+    };
+    emotions.push(entry);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(emotions));
+    if(role==="teacher") renderFiltered();
+  });
+});
+
+function renderStats(filtered){
+  statsEl.innerHTML = "";
+  const counts = {};
+  filtered.forEach(e=>{
+    const key = e.label || e.emoji;
+    counts[key] = (counts[key]||0)+1;
+  });
+  statsEl.innerHTML = Object.entries(counts)
+    .map(([label,c])=> `<span style="font-size:1.2rem">${label}</span> — ${c}`)
+    .join("<br>");
+}
+
+function renderLog(filtered){
+  logEl.innerHTML = filtered.slice(-10).reverse()
+    .map(e=> `<li>${new Date(e.time).toLocaleString("ru-RU")} — ${e.emoji} (${e.label})</li>`)
+    .join("");
+}
